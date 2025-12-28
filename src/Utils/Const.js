@@ -20,7 +20,7 @@ export const EMPLOYEE_DATA = [
     {
         employeeId: 'JN-1',
         employeeName: 'Deepali',
-        designation: 'CEO',
+        designation: 'CTO',
         department: 'Management',
         doj: '12-Jan-2020',
         bankName: 'HDFC Bank',
@@ -31,9 +31,9 @@ export const EMPLOYEE_DATA = [
         isActive: true
     },
     {
-        employeeId: 'JN-2',
+        employeeId: 'JN-1',
         employeeName: 'Dhaval Parekh',
-        designation: 'CTO',
+        designation: 'CEO',
         department: 'Technology',
         doj: '12-Jan-2020',
         bankName: 'HDFC Bank',
