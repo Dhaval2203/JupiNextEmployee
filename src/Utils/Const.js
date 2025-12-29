@@ -25,21 +25,21 @@ export const EMPLOYEE_DATA = [
         doj: '12-Jan-2020',
         bankName: 'HDFC Bank',
         bankAccount: '502134789654',
-        primaryEmail: 'deepali@gmail.com',
+        primaryEmail: 'deepalishrivastava921@gmail.com',
         secondaryEmail: 'deepali.alt@gmail.com',
         reportingManagerId: null,
         isActive: true
     },
     {
-        employeeId: 'JN-1',
+        employeeId: 'JN-2',
         employeeName: 'Dhaval Parekh',
         designation: 'CEO',
         department: 'Technology',
         doj: '12-Jan-2020',
         bankName: 'HDFC Bank',
         bankAccount: '502134789654',
-        primaryEmail: 'dhaval@gmail.com',
-        secondaryEmail: 'dhaval.alt@gmail.com',
+        primaryEmail: 'parekhdhaval1998@gmail.com',
+        secondaryEmail: 'parekhdhaval2203@gmail.com',
         reportingManagerId: null,
         isActive: true
     },
@@ -51,8 +51,8 @@ export const EMPLOYEE_DATA = [
         doj: '10-Feb-2022',
         bankName: 'SBI',
         bankAccount: '123456789012',
-        primaryEmail: 'amit.sharma@gmail.com',
-        secondaryEmail: 'amit.alt@gmail.com',
+        primaryEmail: 'parekhdhaval1998@gmail.com',
+        secondaryEmail: 'parekhdhaval2203@gmail.com',
         reportingManagerId: 'JN-2',
         isActive: true
     },
@@ -131,7 +131,7 @@ export const EMPLOYEE_DATA = [
         bankAccount: '171819202122',
         primaryEmail: 'karan.thakur@gmail.com',
         secondaryEmail: 'karan.alt@gmail.com',
-        reportingManagerId: 'JN-2',
+        reportingManagerId: 'JN-3',
         isActive: true
     },
     {
@@ -142,9 +142,9 @@ export const EMPLOYEE_DATA = [
         doj: '30-Sep-2021',
         bankName: 'HDFC Bank',
         bankAccount: '181920212223',
-        primaryEmail: 'ritika.sharma@gmail.com',
-        secondaryEmail: 'ritika.alt@gmail.com',
-        reportingManagerId: 'JN-1',
+        primaryEmail: 'parekhdhaval1998@gmail.com',
+        secondaryEmail: 'parekhdhaval2203@gmail.com',
+        reportingManagerId: 'JN-9',
         isActive: true
     }
 ];

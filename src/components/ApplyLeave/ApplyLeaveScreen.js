@@ -1,22 +1,36 @@
+'use client';
+
 import { getFullApprovers } from "@/Utils/approvers";
 import {
-    accentColor, primaryBackgroundColor,
-    primaryColor, secondaryColor, whiteColor
+    accentColor,
+    primaryBackgroundColor,
+    primaryColor,
+    secondaryColor,
+    whiteColor
 } from "@/Utils/Colors";
 import { EMPLOYEE_DATA, LEAVE_BALANCE } from "@/Utils/Const";
 import { showToast } from "@/Utils/toast";
-import { calculateLeaveDays, } from "@/Utils/UtilsFunction";
+import { calculateLeaveDays } from "@/Utils/UtilsFunction";
 import {
-    Avatar, Button,
-    Card, Col,
-    DatePicker, Divider,
-    Input, Row,
-    Segmented, Select,
-    Space, Tag,
-    Tooltip, Typography,
+    Avatar,
+    Button,
+    Card,
+    Col,
+    DatePicker,
+    Divider,
+    Input,
+    Row,
+    Segmented,
+    Select,
+    Space,
+    Tag,
+    Tooltip,
+    Typography,
+    Spin,
 } from "antd";
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
+import ConfirmApplyLeaveModal from "../ConfirmApplyLeaveModal";
 
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
@@ -28,6 +42,8 @@ export default function ApplyLeaveScreen() {
     const [startLeaveType, setStartLeaveType] = useState("full");
     const [endLeaveType, setEndLeaveType] = useState("full");
     const [reason, setReason] = useState("");
+    const [submitting, setSubmitting] = useState(false); // 🔄 LOADING STATE
+    const [confirmOpen, setConfirmOpen] = useState(false); // ✅ CONFIRM MODAL
 
     const isSameDay =
         dates.length === 2 &&
@@ -55,10 +71,54 @@ export default function ApplyLeaveScreen() {
     }, [dates, startLeaveType, endLeaveType, isSameDay]);
 
     /* ---------------- Get Approvers ---------------- */
-    const approvers = useMemo(() => getFullApprovers(selectedEmployee), [selectedEmployee]);
+    const approvers = useMemo(
+        () => getFullApprovers(selectedEmployee),
+        [selectedEmployee]
+    );
 
     /* ---------------- Submit ---------------- */
-    const handleSubmit = () => {
+    const submitLeave = async () => {
+        try {
+            setSubmitting(true);
+
+            const payload = {
+                employeeId: selectedEmployee.employeeId,
+                fromDate: dayjs(dates[0]).format("DD-MMM-YYYY"),
+                toDate: dayjs(dates[1]).format("DD-MMM-YYYY"),
+                dayType: isSameDay ? startLeaveType : null,
+                startDayType: !isSameDay ? startLeaveType : null,
+                endDayType: !isSameDay ? endLeaveType : null,
+                totalLeaveDays: totalLeaves,
+                reason,
+                approvers: approvers.map(a => a.employeeId),
+            };
+
+            const res = await fetch("/api/applyleave", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) throw new Error();
+
+            showToast("success", "Success", "Leave applied & email sent");
+
+            // Reset
+            setSelectedEmployee(null);
+            setDates([]);
+            setStartLeaveType("full");
+            setEndLeaveType("full");
+            setReason("");
+        } catch {
+            showToast("error", "Error", "Leave applied but email failed");
+        } finally {
+            setSubmitting(false);
+            setConfirmOpen(false);
+        }
+    };
+
+    /* ---------------- Open Confirm Modal ---------------- */
+    const handleApplyClick = () => {
         if (!selectedEmployee || dates.length !== 2 || !reason) {
             showToast("error", "Validation", "Please fill all required fields");
             return;
@@ -69,20 +129,7 @@ export default function ApplyLeaveScreen() {
             return;
         }
 
-        const payload = {
-            employeeId: selectedEmployee.employeeId,
-            fromDate: dayjs(dates[0]).format("DD-MMM-YYYY"),
-            toDate: dayjs(dates[1]).format("DD-MMM-YYYY"),
-            dayType: isSameDay ? startLeaveType : null,
-            startDayType: !isSameDay ? startLeaveType : null,
-            endDayType: !isSameDay ? endLeaveType : null,
-            totalLeaveDays: totalLeaves,
-            reason,
-            approvers: approvers.map((a) => ({ id: a.employeeId, name: a.employeeName })),
-        };
-
-        console.log("Leave Applied:", payload);
-        showToast("success", "Success", "Leave applied successfully");
+        setConfirmOpen(true);
     };
 
     return (
@@ -104,7 +151,6 @@ export default function ApplyLeaveScreen() {
                 </Text>
             </Card>
 
-            {/* Main Content */}
             <Row gutter={24}>
                 {/* Left: Form */}
                 <Col span={16}>
@@ -114,9 +160,11 @@ export default function ApplyLeaveScreen() {
                             <Text strong>Select Employee</Text>
                             <Select
                                 showSearch
+                                disabled={submitting}
                                 placeholder="Search employee"
                                 options={employeeOptions}
                                 style={{ width: "100%", marginTop: 6 }}
+                                value={selectedEmployee?.employeeId}
                                 onChange={(value) =>
                                     setSelectedEmployee(
                                         EMPLOYEE_DATA.find(
@@ -133,7 +181,9 @@ export default function ApplyLeaveScreen() {
                         <Col span={12}>
                             <Text strong>Leave Date Range</Text>
                             <RangePicker
+                                disabled={submitting}
                                 style={{ width: "100%", marginTop: 6 }}
+                                value={dates}
                                 onChange={(val) => setDates(val || [])}
                             />
                         </Col>
@@ -148,36 +198,43 @@ export default function ApplyLeaveScreen() {
                                         <Text strong>{label}</Text>
                                         <Segmented
                                             block
+                                            disabled={submitting}
                                             options={[
                                                 { label: "Full Day", value: "full" },
                                                 { label: "Half Day", value: "half" },
                                             ]}
                                             value={value}
                                             onChange={setValue}
-                                            style={{
-                                                marginTop: 8,
-                                                background: "#F3F4F6",
-                                                color: "#fff",
-                                            }}
+                                            style={{ marginTop: 8 }}
                                         />
                                     </Col>
                                 );
 
                                 if (totalLeaves <= 1) {
-                                    // Only one selector for single-day leave
-                                    return renderLeaveType("Leave Type", startLeaveType, setStartLeaveType);
+                                    return renderLeaveType(
+                                        "Leave Type",
+                                        startLeaveType,
+                                        setStartLeaveType
+                                    );
                                 }
-                                // Multi-day leave: show start and end selectors
+
                                 return (
                                     <>
-                                        {renderLeaveType("Start Day Type", startLeaveType, setStartLeaveType)}
-                                        {renderLeaveType("End Day Type", endLeaveType, setEndLeaveType)}
+                                        {renderLeaveType(
+                                            "Start Day Type",
+                                            startLeaveType,
+                                            setStartLeaveType
+                                        )}
+                                        {renderLeaveType(
+                                            "End Day Type",
+                                            endLeaveType,
+                                            setEndLeaveType
+                                        )}
                                     </>
                                 );
                             })()}
                         </Row>
                     )}
-
 
                     {/* Reason */}
                     <Row style={{ marginTop: 24 }}>
@@ -185,6 +242,7 @@ export default function ApplyLeaveScreen() {
                             <Text strong>Reason</Text>
                             <Input.TextArea
                                 rows={4}
+                                disabled={submitting}
                                 placeholder="Enter reason for leave"
                                 style={{ marginTop: 6 }}
                                 value={reason}
@@ -212,7 +270,12 @@ export default function ApplyLeaveScreen() {
                     {/* Actions */}
                     <Row justify="end" style={{ marginTop: 24 }}>
                         <Button
-                            style={{ marginRight: 12, background: secondaryColor, color: "#fff" }}
+                            disabled={submitting}
+                            style={{
+                                marginRight: 12,
+                                background: secondaryColor,
+                                color: "#fff",
+                            }}
                             onClick={() => {
                                 setSelectedEmployee(null);
                                 setDates([]);
@@ -227,10 +290,11 @@ export default function ApplyLeaveScreen() {
                         <Button
                             type="primary"
                             style={{ background: primaryColor }}
-                            onClick={handleSubmit}
-                            disabled={totalLeaves === 0}
+                            loading={submitting}
+                            disabled={totalLeaves === 0 || submitting}
+                            onClick={handleApplyClick}
                         >
-                            Apply Leave
+                            {submitting ? "Applying..." : "Apply Leave"}
                         </Button>
                     </Row>
                 </Col>
@@ -238,79 +302,101 @@ export default function ApplyLeaveScreen() {
                 {/* Right: Employee Info + Approvers */}
                 <Col span={8}>
                     {selectedEmployee && (
-                        <Card
-                            style={{
-                                position: "sticky",
-                                top: 0,
-                                background: "#F3F4F6",
-                                borderLeft: `5px solid ${accentColor}`,
-                            }}
-                        >
-                            <Row gutter={16}>
-                                <Col span={24}>
-                                    <Text strong style={{ color: primaryColor }}>Name:</Text>{" "}
-                                    <Text>{selectedEmployee.employeeName}</Text>
-                                </Col>
-                                <Col span={24}>
-                                    <Text strong style={{ color: secondaryColor }}>Department:</Text>{" "}
-                                    <Text>{selectedEmployee.department}</Text>
-                                </Col>
-                                <Col span={24}>
-                                    <Text strong style={{ color: accentColor }}>Designation:</Text>{" "}
-                                    <Text>{selectedEmployee.designation}</Text>
-                                </Col>
-                            </Row>
+                        <Spin spinning={submitting}>
+                            <Card
+                                style={{
+                                    position: "sticky",
+                                    top: 0,
+                                    background: "#F3F4F6",
+                                    borderLeft: `5px solid ${accentColor}`,
+                                }}
+                            >
+                                <Row gutter={16}>
+                                    <Col span={24}>
+                                        <Text strong style={{ color: primaryColor }}>
+                                            Name:
+                                        </Text>{" "}
+                                        <Text>{selectedEmployee.employeeName}</Text>
+                                    </Col>
+                                    <Col span={24}>
+                                        <Text strong style={{ color: secondaryColor }}>
+                                            Department:
+                                        </Text>{" "}
+                                        <Text>{selectedEmployee.department}</Text>
+                                    </Col>
+                                    <Col span={24}>
+                                        <Text strong style={{ color: accentColor }}>
+                                            Designation:
+                                        </Text>{" "}
+                                        <Text>{selectedEmployee.designation}</Text>
+                                    </Col>
+                                </Row>
 
-                            <Divider />
+                                <Divider />
 
-                            <Row gutter={12} style={{ marginBottom: 8 }}>
-                                <Col>
-                                    <Tag color={primaryColor}>Casual Leave: {LEAVE_BALANCE.CL}</Tag>
-                                </Col>
-                                <Col>
-                                    <Tag color={secondaryColor}>Sick Leave: {LEAVE_BALANCE.SL}</Tag>
-                                </Col>
-                                <Col>
-                                    <Tag color={accentColor}>Privilege Leave: {LEAVE_BALANCE.PL}</Tag>
-                                </Col>
-                            </Row>
+                                <Row gutter={12} style={{ marginBottom: 8 }}>
+                                    <Col>
+                                        <Tag color={primaryColor}>
+                                            Casual Leave: {LEAVE_BALANCE.CL}
+                                        </Tag>
+                                    </Col>
+                                    <Col>
+                                        <Tag color={secondaryColor}>
+                                            Sick Leave: {LEAVE_BALANCE.SL}
+                                        </Tag>
+                                    </Col>
+                                    <Col>
+                                        <Tag color={accentColor}>
+                                            Privilege Leave: {LEAVE_BALANCE.PL}
+                                        </Tag>
+                                    </Col>
+                                </Row>
 
-                            <Divider />
+                                <Divider />
 
-                            {/* Approvers */}
-                            <Text strong>Approvers: </Text>
-                            <Space size="small" wrap style={{ marginTop: 8 }}>
-                                {approvers
-                                    .filter(a => a)
-                                    .map((a) => (
-                                        <Tooltip
-                                            key={a.employeeId}
-                                            placement="bottom"
-                                            color={primaryBackgroundColor} // background
-                                            title={
-                                                <span style={{ color: secondaryColor }}>
-                                                    {a.employeeName} ({a.designation})
-                                                </span>
-                                            }
-                                        >
-                                            <Avatar
-                                                size={32}
-                                                style={{
-                                                    backgroundColor: primaryColor,
-                                                    color: whiteColor,
-                                                    fontWeight: "bold",
-                                                    cursor: "pointer",
-                                                }}
+                                <Text strong>Approvers:</Text>
+                                <Space size="small" wrap style={{ marginTop: 8 }}>
+                                    {approvers
+                                        .filter(Boolean)
+                                        .map((a) => (
+                                            <Tooltip
+                                                key={a.employeeId}
+                                                placement="bottom"
+                                                color={primaryBackgroundColor}
+                                                title={
+                                                    <span style={{ color: secondaryColor }}>
+                                                        {a.employeeName} ({a.designation})
+                                                    </span>
+                                                }
                                             >
-                                                {a.employeeName[0]}
-                                            </Avatar>
-                                        </Tooltip>
-                                    ))}
-                            </Space>
-                        </Card>
+                                                <Avatar
+                                                    size={32}
+                                                    style={{
+                                                        backgroundColor: primaryColor,
+                                                        color: whiteColor,
+                                                        fontWeight: "bold",
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    {a.employeeName[0]}
+                                                </Avatar>
+                                            </Tooltip>
+                                        ))}
+                                </Space>
+                            </Card>
+                        </Spin>
                     )}
                 </Col>
             </Row>
+            {/* ✅ CONFIRM MODAL */}
+            <ConfirmApplyLeaveModal
+                open={confirmOpen}
+                onCancel={() => setConfirmOpen(false)}
+                onConfirm={submitLeave}
+                loading={submitting}
+                totalLeaves={totalLeaves}
+                employeeName={selectedEmployee?.employeeName}
+            />
         </Card>
     );
 }

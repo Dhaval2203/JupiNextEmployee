@@ -74,7 +74,7 @@ export default function LoginScreen() {
         ];
 
         return (
-            <Space direction="vertical" size={6} style={{ width: '100%', marginBottom: 16 }}>
+            <Space orientation="vertical" size={6} style={{ width: '100%', marginBottom: 16 }}>
                 {rules.map((rule) => {
                     const valid = passwordValid[rule.key];
                     return (
