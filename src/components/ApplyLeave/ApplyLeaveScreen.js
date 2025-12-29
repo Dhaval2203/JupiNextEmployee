@@ -156,7 +156,7 @@ export default function ApplyLeaveScreen() {
                 <Col span={16}>
                     {/* Employee Select */}
                     <Row gutter={16}>
-                        <Col span={12}>
+                        <Col xs={24} sm={24} md={12} lg={8}>
                             <Text strong>Select Employee</Text>
                             <Select
                                 showSearch
@@ -178,7 +178,7 @@ export default function ApplyLeaveScreen() {
 
                     {/* Leave Dates */}
                     <Row gutter={16} style={{ marginTop: 24 }}>
-                        <Col span={12}>
+                        <Col xs={24} sm={24} md={12} lg={8}>
                             <Text strong>Leave Date Range</Text>
                             <RangePicker
                                 disabled={submitting}
@@ -194,7 +194,7 @@ export default function ApplyLeaveScreen() {
                         <Row gutter={16} style={{ marginTop: 20 }}>
                             {(() => {
                                 const renderLeaveType = (label, value, setValue) => (
-                                    <Col span={12}>
+                                    <Col xs={24} sm={24} md={12} lg={8}>
                                         <Text strong>{label}</Text>
                                         <Segmented
                                             block
@@ -238,7 +238,7 @@ export default function ApplyLeaveScreen() {
 
                     {/* Reason */}
                     <Row style={{ marginTop: 24 }}>
-                        <Col span={24}>
+                        <Col xs={24} sm={24} md={12} lg={8}>
                             <Text strong>Reason</Text>
                             <Input.TextArea
                                 rows={4}
@@ -300,7 +300,7 @@ export default function ApplyLeaveScreen() {
                 </Col>
 
                 {/* Right: Employee Info + Approvers */}
-                <Col span={8}>
+                <Col xs={24} sm={24} md={12} lg={8}>
                     {selectedEmployee && (
                         <Spin spinning={submitting}>
                             <Card
@@ -311,41 +311,35 @@ export default function ApplyLeaveScreen() {
                                     borderLeft: `5px solid ${accentColor}`,
                                 }}
                             >
-                                <Row gutter={16}>
-                                    <Col span={24}>
-                                        <Text strong style={{ color: primaryColor }}>
-                                            Name:
-                                        </Text>{" "}
+                                <Row gutter={[16, 16]}>
+                                    <Col xs={24} sm={24} md={12} lg={8}>
+                                        <Text strong style={{ color: primaryColor }}>Name:</Text>{" "}
                                         <Text>{selectedEmployee.employeeName}</Text>
                                     </Col>
-                                    <Col span={24}>
-                                        <Text strong style={{ color: secondaryColor }}>
-                                            Department:
-                                        </Text>{" "}
+                                    <Col xs={24} sm={24} md={12} lg={8}>
+                                        <Text strong style={{ color: secondaryColor }}>Department:</Text>{" "}
                                         <Text>{selectedEmployee.department}</Text>
                                     </Col>
-                                    <Col span={24}>
-                                        <Text strong style={{ color: accentColor }}>
-                                            Designation:
-                                        </Text>{" "}
+                                    <Col xs={24} sm={24} md={12} lg={8}>
+                                        <Text strong style={{ color: accentColor }}>Designation:</Text>{" "}
                                         <Text>{selectedEmployee.designation}</Text>
                                     </Col>
                                 </Row>
 
                                 <Divider />
 
-                                <Row gutter={12} style={{ marginBottom: 8 }}>
-                                    <Col>
+                                <Row gutter={[12, 12]} style={{ marginBottom: 8 }}>
+                                    <Col xs={24} sm={12} md={8}>
                                         <Tag color={primaryColor}>
                                             Casual Leave: {LEAVE_BALANCE.CL}
                                         </Tag>
                                     </Col>
-                                    <Col>
+                                    <Col xs={24} sm={12} md={8}>
                                         <Tag color={secondaryColor}>
                                             Sick Leave: {LEAVE_BALANCE.SL}
                                         </Tag>
                                     </Col>
-                                    <Col>
+                                    <Col xs={24} sm={12} md={8}>
                                         <Tag color={accentColor}>
                                             Privilege Leave: {LEAVE_BALANCE.PL}
                                         </Tag>
