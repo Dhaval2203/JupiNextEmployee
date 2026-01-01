@@ -64,7 +64,7 @@ export default function LoginScreen() {
             );
 
             message.success('Login successful');
-            router.push('/applyleave');
+            router.push('/timeclock');
         } catch (error) {
             message.error(error.message || 'Invalid email or password');
         } finally {

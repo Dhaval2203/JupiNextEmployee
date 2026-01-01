@@ -1,11 +1,14 @@
 'use client';
 
+import { Button, Layout, Popconfirm } from 'antd';
 import dynamic from 'next/dynamic';
-import { Button, Layout } from 'antd';
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { TiThMenuOutline } from 'react-icons/ti';
 import { CiSquareCheck } from 'react-icons/ci';
+import { TiThMenuOutline } from 'react-icons/ti';
+import { useDispatch } from 'react-redux';
+import { logout } from '../redux/authSlice';
 import {
     accentColor,
     primaryColor,
@@ -13,7 +16,6 @@ import {
     whiteColor,
 } from '../Utils/Colors';
 import { menuItems } from '../Utils/Const';
-import { useRouter, usePathname } from 'next/navigation';
 const { Header } = Layout;
 
 const ClientMenu = dynamic(
@@ -37,7 +39,7 @@ const hexToRgba = (hex, opacity = 0.2) => {
 export default function Headers() {
     const router = useRouter();
     const pathname = usePathname();
-
+    const dispatch = useDispatch();
     const [selectedKey, setSelectedKey] = useState('salarysleep');
     const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -99,6 +101,12 @@ export default function Headers() {
         ),
     }));
 
+    const handleLogout = () => {
+        dispatch(logout());
+        setDrawerOpen(false);
+        router.replace('/login');
+    };
+
     return (
         <Header
             suppressHydrationWarning
@@ -138,6 +146,21 @@ export default function Headers() {
                 />
             </div>
 
+            <Popconfirm
+                title="Logout"
+                description="Are you sure you want to logout?"
+                onConfirm={handleLogout}
+                okText="Yes"
+                cancelText="No"
+            >
+                <Button
+                    type="primary"
+                    danger
+                    style={{ borderRadius: 8 }}
+                >
+                    Logout
+                </Button>
+            </Popconfirm>
             {/* Mobile Menu Button */}
             <Button
                 className="mobile-menu-btn"
