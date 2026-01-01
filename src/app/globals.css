@@ -153,3 +153,11 @@ body {
     display: none;
   }
 }
+
+.ant-picker-calendar-date-value {
+  display: none !important;
+}
+
+.timeclock-calendar .ant-picker-calendar-date-value {
+  display: none !important;
+}

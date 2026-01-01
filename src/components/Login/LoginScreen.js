@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { login } from '../../redux/authSlice';
+
 import {
     primaryColor,
     secondaryBackgroundColor,
@@ -19,25 +20,7 @@ export default function LoginScreen() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [password, setPassword] = useState('');
-
     const [form] = Form.useForm();
-
-    // Static credentials
-    const STATIC_EMAIL = 'dhaval@jupinext.com';
-    const STATIC_PASSWORD = 'Dhaval@admin.123';
-
-    /* -------------------- Default Values -------------------- */
-    useEffect(() => {
-        form.setFieldsValue({
-            email: STATIC_EMAIL,
-            password: STATIC_PASSWORD,
-        });
-
-        setTimeout(() => {
-            // Sync password state for policy UI
-            setPassword(STATIC_PASSWORD);
-        }, 1)
-    }, [form]);
 
     /* -------------------- Password Validation -------------------- */
     const passwordValid = {
@@ -47,21 +30,46 @@ export default function LoginScreen() {
         uppercase: /[A-Z]/.test(password),
     };
 
-    /* -------------------- Submit -------------------- */
-    const onFinish = (values) => {
-        const { email, password } = values;
+    /* -------------------- Submit (Backend Login) -------------------- */
+    const onFinish = async (values) => {
         setLoading(true);
 
-        setTimeout(() => {
-            if (email === STATIC_EMAIL && password === STATIC_PASSWORD) {
-                dispatch(login({ name: 'Dhaval' }));
-                message.success('Login successful!');
-                router.push('/applyleave');
-            } else {
-                message.error('Invalid email or password');
+        try {
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/auth/employee/login`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: values.email,
+                        password: values.password,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || 'Login failed');
             }
+
+            // 🔐 Save to Redux (NO PASSWORD)
+            dispatch(
+                login({
+                    employee: data.employee,
+                    token: data.token,
+                })
+            );
+
+            message.success('Login successful');
+            router.push('/applyleave');
+        } catch (error) {
+            message.error(error.message || 'Invalid email or password');
+        } finally {
             setLoading(false);
-        }, 800);
+        }
     };
 
     /* -------------------- Password Policy UI -------------------- */
@@ -74,7 +82,11 @@ export default function LoginScreen() {
         ];
 
         return (
-            <Space orientation="vertical" size={6} style={{ width: '100%', marginBottom: 16 }}>
+            <Space
+                orientation="vertical"
+                size={6}
+                style={{ width: '100%', marginBottom: 16 }}
+            >
                 {rules.map((rule) => {
                     const valid = passwordValid[rule.key];
                     return (
@@ -86,12 +98,16 @@ export default function LoginScreen() {
                                 alignItems: 'center',
                                 padding: '6px 12px',
                                 borderRadius: 8,
-                                backgroundColor: valid ? `${primaryColor}20` : '#f0f0f0',
+                                backgroundColor: valid
+                                    ? `${primaryColor}20`
+                                    : '#f0f0f0',
                             }}
                         >
                             <span
                                 style={{
-                                    color: valid ? primaryColor : secondaryColor,
+                                    color: valid
+                                        ? primaryColor
+                                        : secondaryColor,
                                     fontWeight: 500,
                                 }}
                             >
@@ -99,9 +115,13 @@ export default function LoginScreen() {
                             </span>
 
                             {valid ? (
-                                <CheckOutlined style={{ color: primaryColor }} />
+                                <CheckOutlined
+                                    style={{ color: primaryColor }}
+                                />
                             ) : (
-                                <CloseOutlined style={{ color: secondaryColor }} />
+                                <CloseOutlined
+                                    style={{ color: secondaryColor }}
+                                />
                             )}
                         </div>
                     );
@@ -129,7 +149,10 @@ export default function LoginScreen() {
                     boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
                 }}
             >
-                <Title level={2} style={{ textAlign: 'center', color: primaryColor }}>
+                <Title
+                    level={2}
+                    style={{ textAlign: 'center', color: primaryColor }}
+                >
                     Login
                 </Title>
 
@@ -142,26 +165,48 @@ export default function LoginScreen() {
                         label="Email"
                         name="email"
                         rules={[
-                            { required: true, message: 'Please enter your email' },
-                            { type: 'email', message: 'Enter a valid email' },
+                            {
+                                required: true,
+                                message: 'Please enter your email',
+                            },
+                            {
+                                type: 'email',
+                                message: 'Enter a valid email',
+                            },
                         ]}
                     >
-                        <Input placeholder="Email" />
+                        <Input placeholder="Enter your email" />
                     </Form.Item>
 
                     <Form.Item
                         label="Password"
                         name="password"
-                        rules={[{ required: true, message: 'Please enter your password' }]}
+                        rules={[
+                            {
+                                required: true,
+                                message: 'Please enter your password',
+                            },
+                        ]}
                     >
                         <Input.Password
-                            placeholder="Password"
-                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter your password"
+                            onChange={(e) =>
+                                setPassword(e.target.value)
+                            }
                         />
                     </Form.Item>
 
                     {renderPasswordPolicy()}
 
+                    <div style={{ textAlign: 'right', marginBottom: 12 }}>
+                        <Button
+                            type="link"
+                            onClick={() => router.push('/forgotpassword')}
+                            style={{ padding: 0 }}
+                        >
+                            Forgot password?
+                        </Button>
+                    </div>
                     <Form.Item>
                         <Button
                             type="primary"
