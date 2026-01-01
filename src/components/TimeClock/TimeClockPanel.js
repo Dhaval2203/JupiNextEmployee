@@ -147,6 +147,29 @@ export default function TimeClockPanel({ employee }) {
         }
     };
 
+    const GetProductivityMeta = (percent = 0) => {
+        if (percent < 40) {
+            return {
+                label: 'Low Productivity',
+                color: secondaryColor
+            };
+        }
+
+        if (percent < 75) {
+            return {
+                label: 'Medium Productivity',
+                color: accentColor
+            };
+        }
+
+        return {
+            label: 'High Productivity',
+            color: primaryColor
+        };
+    };
+
+    const { label, color } = GetProductivityMeta(percent);
+
     /* ================= UI ================= */
 
     return (
@@ -193,7 +216,15 @@ export default function TimeClockPanel({ employee }) {
 
             <Divider />
 
-            <Progress percent={percent} strokeColor={primaryColor} />
+            <Progress
+                percent={percent}
+                strokeColor={primaryColor}
+                format={(p) => (
+                    <span style={{ color }}>
+                        {p}% {label}
+                    </span>
+                )}
+            />
 
             <Divider />
 
