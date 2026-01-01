@@ -183,10 +183,10 @@ export default function TimeClockPanel({ employee }) {
                         .toUpperCase()}
                 </Avatar>
                 <div>
-                    <div style={{ fontWeight: 600 }}>
-                        {employee.employeeName}
+                    <div style={{ fontWeight: 600, fontSize: 18, color: primaryColor }}>
+                        {employee.employeeId} - {employee.employeeName}
                     </div>
-                    <div style={{ color: secondaryColor }}>
+                    <div style={{ color: secondaryColor, fontSize: 16 }}>
                         {employee.designation}
                     </div>
                 </div>
@@ -209,9 +209,18 @@ export default function TimeClockPanel({ employee }) {
             <Divider />
 
             <Row gutter={12}>
-                <Col span={8}><Card size="small">Total<br /><b>{FormatDuration(totalSeconds)}</b></Card></Col>
-                <Col span={8}><Card size="small">Worked<br /><b>{FormatDuration(workingSeconds)}</b></Card></Col>
-                <Col span={8}><Card size="small">Break<br /><b>{FormatDuration(totalBreakSeconds)}</b></Card></Col>
+                <Col span={8}>
+                    <Card size="small" style={{ backgroundColor: accentBackgroundColor }}>Total<br /><b>{FormatDuration(totalSeconds)}</b>
+                    </Card>
+                </Col>
+                <Col span={8}>
+                    <Card size="small" style={{ backgroundColor: secondaryBackgroundColor }}>Worked<br /><b>{FormatDuration(workingSeconds)}</b>
+                    </Card>
+                </Col>
+                <Col span={8}>
+                    <Card size="small" style={{ backgroundColor: accentBackgroundColor }}>Break<br /><b>{FormatDuration(totalBreakSeconds)}</b>
+                    </Card>
+                </Col>
             </Row>
 
             <Divider />
