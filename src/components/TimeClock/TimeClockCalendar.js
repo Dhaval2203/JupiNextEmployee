@@ -19,7 +19,8 @@ const FormatDuration = (sec = 0) => {
     return `${h}h ${m}m`;
 };
 
-const FormatTime = (date) => date ? dayjs(date).format('hh:mm A') : '--';
+const FormatTime = (date) =>
+    date ? dayjs(date).format('hh:mm A') : '--';
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -88,7 +89,6 @@ const TooltipContent = ({ date, day }) => {
 
             <Divider style={{ margin: '10px 0' }} />
 
-            {/* Details */}
             <RowItem label="Start" value={FormatTime(day.startWorkTime)} />
             <RowItem label="End" value={FormatTime(day.endWorkTime)} />
             <RowItem
@@ -110,6 +110,7 @@ export default function TimeClockCalendar({
     monthData = {},
     year,
     month, // 1–12
+    onRequestAdjustment, // 👈 callback from parent
 }) {
     const today = dayjs();
 
@@ -118,22 +119,16 @@ export default function TimeClockCalendar({
     );
     const endOfMonth = startOfMonth.endOf('month');
 
-    const startDay = startOfMonth.day(); // 0–6
+    const startDay = startOfMonth.day();
     const totalDays = endOfMonth.date();
 
     /* ================= Build calendar cells ================= */
 
     const cells = [];
 
-    // Empty cells before month start
-    for (let i = 0; i < startDay; i++) {
-        cells.push(null);
-    }
-
-    // Actual dates
-    for (let d = 1; d <= totalDays; d++) {
+    for (let i = 0; i < startDay; i++) cells.push(null);
+    for (let d = 1; d <= totalDays; d++)
         cells.push(startOfMonth.date(d));
-    }
 
     return (
         <div>
@@ -154,7 +149,9 @@ export default function TimeClockCalendar({
                             style={{
                                 textAlign: 'center',
                                 fontWeight: 600,
-                                color: isWeekend ? secondaryColor : primaryColor,
+                                color: isWeekend
+                                    ? secondaryColor
+                                    : primaryColor,
                             }}
                         >
                             {day}
@@ -181,6 +178,11 @@ export default function TimeClockCalendar({
                     const isPastDay = date.isBefore(today, 'day');
                     const isWeekend =
                         date.day() === 0 || date.day() === 6;
+
+                    const isShort =
+                        day &&
+                        day.isLessThan8Hours &&
+                        day.shortageSeconds > 0;
 
                     let barColor = '#e5e7eb';
                     if (day) {
@@ -209,34 +211,35 @@ export default function TimeClockCalendar({
                         >
                             <div
                                 style={{
-                                    minHeight: 86,
+                                    minHeight: 90,
                                     padding: 10,
                                     borderRadius: 14,
                                     background: isToday
                                         ? `${primaryColor}12`
                                         : whiteColor,
                                     border: `1px solid ${isToday
-                                        ? primaryColor
-                                        : secondaryBackgroundColor
+                                            ? primaryColor
+                                            : secondaryBackgroundColor
                                         }`,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'space-between',
                                     opacity: isWeekend ? 0.5 : 1,
-                                    cursor: day ? 'pointer' : 'default',
                                 }}
                             >
-                                {/* Date number */}
+                                {/* Date */}
                                 <div
                                     style={{
                                         fontWeight: 600,
-                                        color: isWeekend ? secondaryColor : accentColor,
+                                        color: isWeekend
+                                            ? secondaryColor
+                                            : accentColor,
                                     }}
                                 >
                                     {date.date()}
                                 </div>
 
-                                {/* Past day working hours */}
+                                {/* Worked hours */}
                                 {day && isPastDay && (
                                     <div
                                         style={{
@@ -259,6 +262,51 @@ export default function TimeClockCalendar({
                                             background: barColor,
                                         }}
                                     />
+                                )}
+
+                                {/* Request Adjustment */}
+                                {day &&
+                                    isPastDay &&
+                                    isShort &&
+                                    !day.hasAdjustmentRequest && (
+                                        <div
+                                            style={{
+                                                marginTop: 4,
+                                                fontSize: 10,
+                                                color: primaryColor,
+                                                textAlign: 'right',
+                                                cursor: 'pointer',
+                                                fontWeight: 600,
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onRequestAdjustment?.(day);
+                                            }}
+                                        >
+                                            Request Adjustment
+                                        </div>
+                                    )}
+
+                                {/* Adjustment Status */}
+                                {day?.adjustment && (
+                                    <div
+                                        style={{
+                                            marginTop: 4,
+                                            fontSize: 10,
+                                            textAlign: 'right',
+                                            fontWeight: 600,
+                                            color:
+                                                day.adjustment.status ===
+                                                    'APPROVED'
+                                                    ? '#16a34a'
+                                                    : day.adjustment.status ===
+                                                        'REJECTED'
+                                                        ? '#dc2626'
+                                                        : '#f59e0b',
+                                        }}
+                                    >
+                                        {day.adjustment.status}
+                                    </div>
                                 )}
                             </div>
                         </Tooltip>

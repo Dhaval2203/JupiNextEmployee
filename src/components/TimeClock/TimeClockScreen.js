@@ -1,140 +1,123 @@
 'use client';
 
-import { Row, Col, Tag, Select, Space, Card } from 'antd';
+import {
+    Row,
+    Col,
+    Tag,
+    Select,
+    Space,
+    Card,
+} from 'antd';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
-import localeData from 'dayjs/plugin/localeData';
 
 import TimeClockPanel from './TimeClockPanel';
 import TimeClockCalendar from './TimeClockCalendar';
+import AttendanceAdjustmentModal from './AttendanceAdjustmentModal';
 import { FetchMonthTimeClock } from './TimeClockApi';
 
-/* ================= Day.js Setup ================= */
-
-dayjs.extend(localeData);
-
-/* ================= Helpers ================= */
-
 const YEARS = Array.from({ length: 5 }, (_, i) => dayjs().year() - i);
-const MONTHS = dayjs.months(); // January → December
-
-/* ================= Component ================= */
+const MONTHS = dayjs.months();
 
 export default function TimeClockScreen() {
     const user = useSelector((state) => state.auth?.user?.employee);
 
     const [selectedYear, setSelectedYear] = useState(dayjs().year());
     const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1);
-
     const [monthData, setMonthData] = useState({});
     const [loadingMonth, setLoadingMonth] = useState(false);
 
-    /* ================= Fetch Monthly Data ================= */
+    const [selectedDay, setSelectedDay] = useState(null);
+    const [adjustmentOpen, setAdjustmentOpen] = useState(false);
 
-    useEffect(() => {
-        if (!user?.employeeId) return;
+    const loadMonthData = async () => {
+        setLoadingMonth(true);
+        try {
+            const res = await FetchMonthTimeClock(
+                user.employeeId,
+                selectedYear,
+                String(selectedMonth).padStart(2, '0')
+            );
 
-        let cancelled = false;
+            const map = {};
+            res.data?.forEach((d) => {
+                map[dayjs(d.workDate).format('YYYY-MM-DD')] = d;
+            });
 
-        const loadMonthData = async () => {
-            try {
-                setLoadingMonth(true);
-
-                const res = await FetchMonthTimeClock(
-                    user.employeeId,
-                    selectedYear,
-                    String(selectedMonth).padStart(2, '0')
-                );
-
-                if (cancelled) return;
-
-                const map = {};
-                res.data?.forEach((d) => {
-                    map[dayjs(d.workDate).format('YYYY-MM-DD')] = d;
-                });
-
-                setMonthData(map);
-            } catch {
-                if (!cancelled) setMonthData({});
-            } finally {
-                if (!cancelled) setLoadingMonth(false);
-            }
-        };
-
-        loadMonthData();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [user?.employeeId, selectedYear, selectedMonth]);
-
-    /* ================= Guard ================= */
-
-    if (!user) {
-        return <Tag color="red">User not logged in</Tag>;
-    }
-
-    /* ================= Handlers ================= */
-
-    const handleYearChange = (year) => {
-        setSelectedYear(year);
-
-        // Reset month only if current month doesn't exist logically
-        if (year !== selectedYear) {
-            setSelectedMonth(1);
+            setMonthData(map);
+        } finally {
+            setLoadingMonth(false);
         }
     };
 
-    const handleMonthChange = (month) => {
-        setSelectedMonth(month);
-    };
+    useEffect(() => {
+        if (user?.employeeId) loadMonthData();
+    }, [user?.employeeId, selectedYear, selectedMonth]);
 
-    /* ================= UI ================= */
+    if (!user) return <Tag color="red">User not logged in</Tag>;
 
     return (
-        <Row gutter={16} className="mt-3 mb-3">
-            {/* LEFT */}
-            <Col xs={24} md={10}>
-                <TimeClockPanel employee={user} />
-            </Col>
+        <>
+            <Row gutter={16} className="mt-3 mb-3">
+                <Col xs={24} md={10}>
+                    <TimeClockPanel employee={user} />
+                </Col>
 
-            {/* RIGHT */}
-            <Col xs={24} md={14}>
-                <Card title="Attendance Overview" loading={loadingMonth}>
-                    <Space style={{ marginBottom: 16 }}>
-                        <Select
-                            value={selectedYear}
-                            onChange={handleYearChange}
-                            style={{ width: 120 }}
-                        >
-                            {YEARS.map((y) => (
-                                <Select.Option key={y} value={y}>
-                                    {y}
-                                </Select.Option>
-                            ))}
-                        </Select>
+                <Col xs={24} md={14}>
+                    <Card title="Attendance Overview" loading={loadingMonth}>
+                        <Space style={{ marginBottom: 16 }}>
+                            <Select
+                                value={selectedYear}
+                                onChange={(y) => {
+                                    setSelectedYear(y);
+                                    setSelectedMonth(1);
+                                }}
+                                style={{ width: 120 }}
+                            >
+                                {YEARS.map((y) => (
+                                    <Select.Option key={y} value={y}>
+                                        {y}
+                                    </Select.Option>
+                                ))}
+                            </Select>
 
-                        <Select
-                            value={selectedMonth}
-                            onChange={handleMonthChange}
-                            style={{ width: 160 }}
-                        >
-                            {MONTHS.map((m, i) => (
-                                <Select.Option key={i + 1} value={i + 1}>
-                                    {m}
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Space>
+                            <Select
+                                value={selectedMonth}
+                                onChange={setSelectedMonth}
+                                style={{ width: 160 }}
+                            >
+                                {MONTHS.map((m, i) => (
+                                    <Select.Option key={i + 1} value={i + 1}>
+                                        {m}
+                                    </Select.Option>
+                                ))}
+                            </Select>
+                        </Space>
 
-                    <TimeClockCalendar
-                        year={selectedYear}
-                        month={selectedMonth}
-                        monthData={monthData}
-                    />
-                </Card>
-            </Col>
-        </Row>
+                        <TimeClockCalendar
+                            year={selectedYear}
+                            month={selectedMonth}
+                            monthData={monthData}
+                            onRequestAdjustment={(day) => {
+                                setSelectedDay(day);
+                                setAdjustmentOpen(true);
+                            }}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+
+            <AttendanceAdjustmentModal
+                open={adjustmentOpen}
+                onClose={() => {
+                    setAdjustmentOpen(false);
+                    setSelectedDay(null);
+                }}
+                day={selectedDay}
+                employee={user}
+                onSuccess={loadMonthData}
+            />
+        </>
     );
 }

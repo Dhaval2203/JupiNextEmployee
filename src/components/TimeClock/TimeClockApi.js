@@ -46,3 +46,11 @@ export const EndShift = (employeeId) =>
  */
 export const AddBreak = (employeeId, breakSeconds) =>
     Api.post('/timeclock/break', { employeeId, breakSeconds });
+
+/* ================= ATTENDANCE ADJUSTMENT ================= */
+
+/**
+ * Request attendance adjustment (short hours)
+ */
+export const RequestAttendanceAdjustment = (payload) =>
+    Api.post('/attendance-adjustment/request', payload);
