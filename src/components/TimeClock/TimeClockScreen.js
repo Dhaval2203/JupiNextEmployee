@@ -17,7 +17,7 @@ dayjs.extend(localeData);
 /* ================= Helpers ================= */
 
 const YEARS = Array.from({ length: 5 }, (_, i) => dayjs().year() - i);
-const MONTHS = dayjs.months(); // ✅ now works correctly
+const MONTHS = dayjs.months(); // January → December
 
 /* ================= Component ================= */
 
@@ -25,22 +25,19 @@ export default function TimeClockScreen() {
     const user = useSelector((state) => state.auth?.user?.employee);
 
     const [selectedYear, setSelectedYear] = useState(dayjs().year());
-    const [selectedMonth, setSelectedMonth] = useState(
-        dayjs().month() + 1 // 1–12
-    );
+    const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1);
 
     const [monthData, setMonthData] = useState({});
     const [loadingMonth, setLoadingMonth] = useState(false);
 
     /* ================= Fetch Monthly Data ================= */
-    /* React 18 + StrictMode safe */
 
     useEffect(() => {
         if (!user?.employeeId) return;
 
         let cancelled = false;
 
-        const LoadMonthData = async () => {
+        const loadMonthData = async () => {
             try {
                 setLoadingMonth(true);
 
@@ -53,7 +50,7 @@ export default function TimeClockScreen() {
                 if (cancelled) return;
 
                 const map = {};
-                res.data.forEach((d) => {
+                res.data?.forEach((d) => {
                     map[dayjs(d.workDate).format('YYYY-MM-DD')] = d;
                 });
 
@@ -65,7 +62,7 @@ export default function TimeClockScreen() {
             }
         };
 
-        LoadMonthData();
+        loadMonthData();
 
         return () => {
             cancelled = true;
@@ -78,26 +75,37 @@ export default function TimeClockScreen() {
         return <Tag color="red">User not logged in</Tag>;
     }
 
+    /* ================= Handlers ================= */
+
+    const handleYearChange = (year) => {
+        setSelectedYear(year);
+
+        // Reset month only if current month doesn't exist logically
+        if (year !== selectedYear) {
+            setSelectedMonth(1);
+        }
+    };
+
+    const handleMonthChange = (month) => {
+        setSelectedMonth(month);
+    };
+
     /* ================= UI ================= */
 
     return (
-        <Row gutter={16} className='mt-3 mb-3'>
-            {/* LEFT: Time Clock Panel */}
+        <Row gutter={16} className="mt-3 mb-3">
+            {/* LEFT */}
             <Col xs={24} md={10}>
                 <TimeClockPanel employee={user} />
             </Col>
 
-            {/* RIGHT: Calendar */}
+            {/* RIGHT */}
             <Col xs={24} md={14}>
-                <Card
-                    title="Attendance Overview"
-                    loading={loadingMonth}
-                >
-                    {/* Year / Month Selector */}
+                <Card title="Attendance Overview" loading={loadingMonth}>
                     <Space style={{ marginBottom: 16 }}>
                         <Select
                             value={selectedYear}
-                            onChange={setSelectedYear}
+                            onChange={handleYearChange}
                             style={{ width: 120 }}
                         >
                             {YEARS.map((y) => (
@@ -109,21 +117,17 @@ export default function TimeClockScreen() {
 
                         <Select
                             value={selectedMonth}
-                            onChange={setSelectedMonth}
+                            onChange={handleMonthChange}
                             style={{ width: 160 }}
                         >
                             {MONTHS.map((m, i) => (
-                                <Select.Option
-                                    key={i + 1}
-                                    value={i + 1}
-                                >
+                                <Select.Option key={i + 1} value={i + 1}>
                                     {m}
                                 </Select.Option>
                             ))}
                         </Select>
                     </Space>
 
-                    {/* Calendar */}
                     <TimeClockCalendar
                         year={selectedYear}
                         month={selectedMonth}

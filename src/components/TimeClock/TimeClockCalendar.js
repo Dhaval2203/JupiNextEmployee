@@ -24,6 +24,87 @@ const FormatTime = (date) =>
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+/* ================= Tooltip UI ================= */
+
+const RowItem = ({ label, value, highlight }) => (
+    <div
+        style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: 6,
+            fontWeight: highlight ? 600 : 400,
+            color: highlight ? primaryColor : secondaryColor,
+            fontSize: 12,
+        }}
+    >
+        <span>{label}</span>
+        <span>{value}</span>
+    </div>
+);
+
+const TooltipContent = ({ date, day }) => {
+    if (!day) return null;
+
+    const isFullDay = day.totalWorkSeconds >= 8 * 3600;
+
+    return (
+        <div
+            style={{
+                minWidth: 240,
+                background: whiteColor,
+                borderRadius: 14,
+                padding: 14,
+                boxShadow: '0 10px 28px rgba(0,0,0,0.15)',
+            }}
+        >
+            {/* Header */}
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                }}
+            >
+                <div style={{ fontWeight: 600 }}>
+                    {date.format('DD MMM YYYY')}
+                </div>
+
+                <div
+                    style={{
+                        fontSize: 11,
+                        padding: '3px 10px',
+                        borderRadius: 20,
+                        background: isFullDay
+                            ? `${primaryColor}15`
+                            : `${secondaryColor}15`,
+                        color: isFullDay
+                            ? primaryColor
+                            : secondaryColor,
+                        fontWeight: 600,
+                    }}
+                >
+                    {isFullDay ? 'Full Day' : 'Short Hours'}
+                </div>
+            </div>
+
+            <Divider style={{ margin: '10px 0' }} />
+
+            {/* Details */}
+            <RowItem label="Start" value={FormatTime(day.startWorkTime)} />
+            <RowItem label="End" value={FormatTime(day.endWorkTime)} />
+            <RowItem
+                label="Break"
+                value={FormatDuration(day.totalBreakSeconds)}
+            />
+            <RowItem
+                label="Worked"
+                value={FormatDuration(day.totalWorkSeconds)}
+                highlight
+            />
+        </div>
+    );
+};
+
 /* ================= Component ================= */
 
 export default function TimeClockCalendar({
@@ -33,10 +114,10 @@ export default function TimeClockCalendar({
 }) {
     const today = dayjs();
 
-    // 🔑 Build selected month correctly
-    const selectedMonth = dayjs(`${year}-${String(month).padStart(2, '0')}-01`);
-    const startOfMonth = dayjs(`${year}-${month}-01`);
-    const endOfMonth = selectedMonth.endOf('month');
+    const startOfMonth = dayjs(
+        `${year}-${String(month).padStart(2, '0')}-01`
+    );
+    const endOfMonth = startOfMonth.endOf('month');
 
     const startDay = startOfMonth.day(); // 0–6
     const totalDays = endOfMonth.date();
@@ -102,65 +183,44 @@ export default function TimeClockCalendar({
                     if (day) {
                         barColor =
                             day.totalWorkSeconds >= 8 * 3600
-                                ? '#22c55e' // green
-                                : '#f59e0b'; // amber
+                                ? primaryColor
+                                : secondaryColor;
                     }
 
                     return (
                         <Tooltip
                             key={key}
                             placement="top"
+                            overlayInnerStyle={{
+                                background: 'transparent',
+                                padding: 0,
+                            }}
                             title={
-                                day && (
-                                    <div style={{ minWidth: 200 }}>
-                                        <div>
-                                            <b>Date:</b>{' '}
-                                            {date.format('DD MMM YYYY')}
-                                        </div>
-
-                                        <Divider style={{ margin: '6px 0' }} />
-
-                                        <div>
-                                            <b>Start:</b>{' '}
-                                            {FormatTime(day.startWorkTime)}
-                                        </div>
-                                        <div>
-                                            <b>End:</b>{' '}
-                                            {FormatTime(day.endWorkTime)}
-                                        </div>
-                                        <div>
-                                            <b>Break:</b>{' '}
-                                            {FormatDuration(
-                                                day.totalBreakSeconds
-                                            )}
-                                        </div>
-                                        <div>
-                                            <b>Worked:</b>{' '}
-                                            {FormatDuration(
-                                                day.totalWorkSeconds
-                                            )}
-                                        </div>
-                                    </div>
-                                )
+                                day ? (
+                                    <TooltipContent
+                                        date={date}
+                                        day={day}
+                                    />
+                                ) : null
                             }
                         >
                             <div
                                 style={{
-                                    minHeight: 82,
-                                    padding: 8,
-                                    borderRadius: 12,
+                                    minHeight: 86,
+                                    padding: 10,
+                                    borderRadius: 14,
                                     background: isToday
-                                        ? `${primaryColor}15`
+                                        ? `${primaryColor}12`
                                         : whiteColor,
                                     border: `1px solid ${isToday
-                                        ? primaryColor
-                                        : secondaryBackgroundColor
+                                            ? primaryColor
+                                            : secondaryBackgroundColor
                                         }`,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'space-between',
                                     opacity: isWeekend ? 0.5 : 1,
-                                    cursor: 'pointer',
+                                    cursor: day ? 'pointer' : 'default',
                                 }}
                             >
                                 {/* Date number */}
@@ -173,7 +233,7 @@ export default function TimeClockCalendar({
                                     {date.date()}
                                 </div>
 
-                                {/* Previous day working hours */}
+                                {/* Past day working hours */}
                                 {day && isPastDay && (
                                     <div
                                         style={{
