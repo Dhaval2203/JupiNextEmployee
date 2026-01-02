@@ -19,8 +19,7 @@ const FormatDuration = (sec = 0) => {
     return `${h}h ${m}m`;
 };
 
-const FormatTime = (date) =>
-    date ? dayjs(date).format('hh:mm A') : '--';
+const FormatTime = (date) => date ? dayjs(date).format('hh:mm A') : '--';
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -146,18 +145,22 @@ export default function TimeClockCalendar({
                     marginBottom: 10,
                 }}
             >
-                {WEEK_DAYS.map((day) => (
-                    <div
-                        key={day}
-                        style={{
-                            textAlign: 'center',
-                            fontWeight: 600,
-                            color: secondaryColor,
-                        }}
-                    >
-                        {day}
-                    </div>
-                ))}
+                {WEEK_DAYS.map((day) => {
+                    const isWeekend = day === 'Sat' || day === 'Sun';
+
+                    return (
+                        <div
+                            key={day}
+                            style={{
+                                textAlign: 'center',
+                                fontWeight: 600,
+                                color: isWeekend ? secondaryColor : primaryColor,
+                            }}
+                        >
+                            {day}
+                        </div>
+                    );
+                })}
             </div>
 
             {/* ===== Calendar Grid ===== */}
@@ -213,8 +216,8 @@ export default function TimeClockCalendar({
                                         ? `${primaryColor}12`
                                         : whiteColor,
                                     border: `1px solid ${isToday
-                                            ? primaryColor
-                                            : secondaryBackgroundColor
+                                        ? primaryColor
+                                        : secondaryBackgroundColor
                                         }`,
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -227,7 +230,7 @@ export default function TimeClockCalendar({
                                 <div
                                     style={{
                                         fontWeight: 600,
-                                        color: accentColor,
+                                        color: isWeekend ? secondaryColor : accentColor,
                                     }}
                                 >
                                     {date.date()}
